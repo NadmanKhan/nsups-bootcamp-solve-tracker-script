@@ -26,3 +26,5 @@ interface VjudgeResponseData {
   participants: Record<string, string[]>
   submissions: number[][];
 }
+
+type color = 'green' | 'yellow' | 'orange' | 'red';
