@@ -297,6 +297,7 @@ function myFunction() {
                 p => {
                   sheet.getRange(userRow, column)
                     .setValue(solveMap[user.id][contest.id].has(p) ? '✅' : '❌')
+                    .setHorizontalAlignment('center');
                   ++column;
                 }
               );
