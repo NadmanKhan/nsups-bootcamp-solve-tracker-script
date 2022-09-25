@@ -2,7 +2,24 @@ function myFunction() {
   const sheetNameScriptParams = 'script-params';
   const headingParamsContest = 'params-contest';
   const headingParamsUser = 'params-user';
+  const headingParamsColor = 'params-color';
   const baseUrlVjudgeContest = 'https://vjudge.net/contest/';
+
+  const colorString: Record<color, string> = (() => {
+    const sheet = SpreadsheetApp
+      .getActiveSpreadsheet().getSheetByName(sheetNameScriptParams);
+    const head = sheet.createTextFinder(headingParamsColor).findAll()[0];
+    const rangeName = sheet.getRange(head.getRow() + 1, head.getColumn(), 1, 4);
+    const rangeValue = sheet.getRange(head.getRow() + 2, head.getColumn(), 1, 4);
+    const names = rangeName.getValues()[0] as string[]
+    return rangeValue.getBackgrounds()[0].reduce(
+      (result, value, index) => ({
+        ...result,
+        [names[index] as color]: value
+      }),
+      {}
+    );
+  })() as Record<color, string>;
 
   const users: User[] = (() => {
     const sheet = SpreadsheetApp
@@ -98,10 +115,11 @@ function myFunction() {
   // write to sheet
   (() => {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('solve-tracker');
-    sheet.clear();
+    const previousRange = sheet.getDataRange();
+    previousRange.breakApart();
 
-    sheet.clearConditionalFormatRules();
-    const formatRules = sheet.getConditionalFormatRules()
+    let formatRules = sheet.getConditionalFormatRules();
+    formatRules = [];
 
     let column = 1;
 
@@ -345,6 +363,27 @@ function myFunction() {
       )
 
     sheet.setConditionalFormatRules(formatRules)
+
+    const clearNumRows = previousRange.getRow() - sheet.getLastRow();
+    if (clearNumRows > 0) {
+      sheet.getRange(
+        sheet.getLastRow() + 1,
+        1,
+        clearNumRows,
+        previousRange.getLastColumn()
+      )
+        .clear();
+    }
+    const clearNumColumns = previousRange.getColumn() - sheet.getLastColumn();
+    if (clearNumColumns > 0) {
+      sheet.getRange(
+        1,
+        sheet.getLastColumn() + 1,
+        clearNumRows,
+        previousRange.getLastColumn()
+      )
+        .clear();
+    }
   })();
 
   function findUserId(handle: string, judge: Judge): string {
@@ -386,22 +425,22 @@ function myFunction() {
   ): GoogleAppsScript.Spreadsheet.ConditionalFormatRule[] {
     const rule100 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(targetSolves)
-      .setBackground('#93c47d')
+      .setBackground(colorString.green)
       .setRanges([range])
       .build();
     const rule066 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.66))
-      .setBackground('#ffd966')
+      .setBackground(colorString.yellow)
       .setRanges([range])
       .build();
     const rule033 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.33))
-      .setBackground('#f6b26b')
+      .setBackground(colorString.orange)
       .setRanges([range])
       .build();
     const rule000 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(0)
-      .setBackground('#e06666')
+      .setBackground(colorString.red)
       .setRanges([range])
       .build();
     return [rule100, rule066, rule033, rule000];
