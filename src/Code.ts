@@ -100,6 +100,9 @@ function myFunction() {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('solve-tracker');
     sheet.clear();
 
+    sheet.clearConditionalFormatRules();
+    const formatRules = sheet.getConditionalFormatRules()
+
     let column = 1;
 
     // set rank heading
@@ -126,16 +129,45 @@ function myFunction() {
       .setValue('Total solves')
       .setWrap(true)
       .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
-    // set total required count sub-heading
+
+    // set total required solve-count sub-heading
     sheet.setColumnWidth(column, 90);
     sheet.getRange(2, column)
       .setValue(`Required: ${totalProblems}`);
-    makeFormatRule(totalProblems, column)
+
+    // build and push format rules for total solve-count
+    const rulesTotalSolves = formatRulesForSolveCount(
+      totalProblems,
+      sheet.getRange(3, column, users.length, 1)
+    );
+    rulesTotalSolves.forEach(rule => formatRules.push(rule));
     ++column;
-    // set total reqruied percentage sub-heading
+
+    // set total reqruied solve percent sub-heading
     sheet.setColumnWidth(column, 40);
     sheet.getRange(2, column)
       .setValue(`100%`);
+
+    // build and push format rule for total solve percent
+    const rulePercentGradient = SpreadsheetApp.newConditionalFormatRule()
+      .setGradientMaxpointWithValue(
+        '#00ff00',
+        SpreadsheetApp.InterpolationType.PERCENT,
+        '100'
+      )
+      .setGradientMidpointWithValue(
+        '#ffff00',
+        SpreadsheetApp.InterpolationType.PERCENT,
+        '75'
+      )
+      .setGradientMinpointWithValue(
+        '#ff0000',
+        SpreadsheetApp.InterpolationType.PERCENT,
+        '50'
+      )
+      .setRanges([sheet.getRange(3, column, users.length, 1)])
+      .build();
+    formatRules.push(rulePercentGradient);
     ++column;
 
     // set user credentials headings
@@ -180,7 +212,13 @@ function myFunction() {
         sheet.setColumnWidth(column, 90);
         sheet.getRange(2, column)
           .setValue(`Required: ${contest.reqCount}`);
-        makeFormatRule(contest.reqCount, column);
+
+        // build and push format rule for solve-count
+        const rulesContestSolves = formatRulesForSolveCount(
+          contest.reqCount,
+          sheet.getRange(3, column, users.length, 1)
+        );
+        rulesContestSolves.forEach(rule => formatRules.push(rule));
         ++column
 
         // set contest's required problems sub-heading
@@ -305,6 +343,8 @@ function myFunction() {
           );
         }
       )
+
+    sheet.setConditionalFormatRules(formatRules)
   })();
 
   function findUserId(handle: string, judge: Judge): string {
@@ -340,23 +380,30 @@ function myFunction() {
     return res.join('').toUpperCase();
   }
 
-  function makeFormatRule(targetSolves: number, column: number) {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('solve-tracker');
-    const rule = SpreadsheetApp.newConditionalFormatRule()
-      .setGradientMaxpointWithValue('#00ff00',
-        SpreadsheetApp.InterpolationType.NUMBER,
-        targetSolves.toString())
-      .setGradientMidpointWithValue('#ffff00',
-        SpreadsheetApp.InterpolationType.NUMBER,
-        Math.ceil(targetSolves * 0.66).toString())
-      .setGradientMinpointWithValue('#ff0000',
-        SpreadsheetApp.InterpolationType.NUMBER,
-        Math.ceil(targetSolves * 0.33
-        ).toString())
-      .setRanges([sheet.getRange(3, column, users.length, 1)])
+  function formatRulesForSolveCount(
+    targetSolves: number,
+    range: GoogleAppsScript.Spreadsheet.Range
+  ): GoogleAppsScript.Spreadsheet.ConditionalFormatRule[] {
+    const rule100 = SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberGreaterThanOrEqualTo(targetSolves)
+      .setBackground('#93c47d')
+      .setRanges([range])
       .build();
-    const rules = sheet.getConditionalFormatRules();
-    rules.push(rule);
-    sheet.setConditionalFormatRules(rules);
+    const rule066 = SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.66))
+      .setBackground('#ffd966')
+      .setRanges([range])
+      .build();
+    const rule033 = SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.33))
+      .setBackground('#f6b26b')
+      .setRanges([range])
+      .build();
+    const rule000 = SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberGreaterThanOrEqualTo(0)
+      .setBackground('#e06666')
+      .setRanges([range])
+      .build();
+    return [rule100, rule066, rule033, rule000];
   }
 }
