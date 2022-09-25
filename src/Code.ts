@@ -1,13 +1,13 @@
 function myFunction() {
   const sheetNameScriptParams = 'script-params';
-  const headingScriptParamsContest = 'params-contest';
-  const headingScriptParamsUser = 'params-user';
+  const headingParamsContest = 'params-contest';
+  const headingParamsUser = 'params-user';
   const baseUrlVjudgeContest = 'https://vjudge.net/contest/';
 
   const users: User[] = (() => {
     const sheet = SpreadsheetApp
       .getActiveSpreadsheet().getSheetByName(sheetNameScriptParams);
-    const head = sheet.createTextFinder(headingScriptParamsUser).findAll()[0];
+    const head = sheet.createTextFinder(headingParamsUser).findAll()[0];
     const count = sheet.getRange(head.getRow(), head.getColumn() + 1).getValue() as number;
     const range = sheet.getRange(head.getRow() + 2, head.getColumn(), count, 5);
     const values = range.getValues() as string[][];
@@ -28,7 +28,7 @@ function myFunction() {
   const vjudgeContests: VjudgeContest[] = (() => {
     const sheet = SpreadsheetApp
       .getActiveSpreadsheet().getSheetByName(sheetNameScriptParams);
-    const head = sheet.createTextFinder(headingScriptParamsContest).findAll()[0];
+    const head = sheet.createTextFinder(headingParamsContest).findAll()[0];
     const count = sheet.getRange(head.getRow(), head.getColumn() + 1).getValue() as number;
     const range = sheet.getRange(head.getRow() + 2, head.getColumn(), count, 3);
     const values = range.getValues() as string[][];
