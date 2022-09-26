@@ -62,7 +62,16 @@ function myFunction() {
     );
   })();
 
+  const contestMap: Record<string, VjudgeContest> = vjudgeContests.reduce(
+    (obj, contest) => ({
+      ...obj,
+      [contest.id]: contest
+    }),
+    {}
+  );
+
   const solveMap: Record<string, Record<string, Set<string>>> = {};
+  const solveCountMap: Record<string, Record<string, number>> = {};
 
   for (const contest of vjudgeContests) {
     const url = baseUrlVjudgeContest + 'rank/single/' + contest.id;
@@ -105,6 +114,33 @@ function myFunction() {
         solveMap[sub.userId][contest.id].add(probIndexToId(sub.problemIndex))
       }
     );
+
+    users.forEach(
+      user => {
+        vjudgeContests.forEach(
+          contest => {
+            if (!solveMap[user.id]) {
+              solveMap[user.id] = {};
+            }
+            if (!solveMap[user.id][contest.id]) {
+              solveMap[user.id][contest.id] = new Set();
+            }
+            const solves = solveMap[user.id][contest.id];
+            if (!solveCountMap[user.id]) {
+              solveCountMap[user.id] = {};
+            }
+            solveCountMap[user.id][contest.id] =
+              Math.min(
+                solves.size,
+                contest.reqCount - contest.reqProblems.reduce(
+                  (count, problemId) => count + (solves.has(problemId) ? 0 : 1),
+                  0
+                )
+              );
+          }
+        )
+      }
+    )
   }
 
   const totalProblems = vjudgeContests.reduce(
@@ -141,7 +177,7 @@ function myFunction() {
       .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
     ++column;
 
-    // set 'Total solves' heading
+    // set total solves heading
     sheet.getRange(1, column, 1, 2)
       .merge()
       .setValue('Total solves')
@@ -208,7 +244,7 @@ function myFunction() {
 
     // loop over contests to set their headings and sub-headings
     vjudgeContests.forEach(
-      (contest, contestIndex) => {
+      contest => {
         // build rich-text for contest's heading
         const richtTextContestHeading = SpreadsheetApp.newRichTextValue()
           .setText(contest.title)
@@ -270,20 +306,7 @@ function myFunction() {
         user => ({
           user,
           totalSolves: vjudgeContests.reduce(
-            (result, contest) => {
-              if (!solveMap[user.id]) {
-                solveMap[user.id] = {};
-              }
-              if (!solveMap[user.id][contest.id]) {
-                solveMap[user.id][contest.id] = new Set();
-              }
-              const notSolved = contest.reqProblems.reduce(
-                (total, p) => total + (solveMap[user.id][contest.id].has(p) ? 0 : 1),
-                0
-              );
-              return result + Math.min(solveMap[user.id][contest.id].size,
-                (contest.reqCount - notSolved));
-            },
+            (result, contest) => result + solveCountMap[user.id][contest.id],
             0
           )
         })
@@ -336,16 +359,9 @@ function myFunction() {
           // set user's contest solves
           vjudgeContests.forEach(
             contest => {
-              if (!solveMap[user.id]) {
-                solveMap[user.id] = {};
-              }
-              if (!solveMap[user.id][contest.id]) {
-                solveMap[user.id][contest.id] = new Set();
-              }
-
               // set user's solve-count in current contest
               sheet.getRange(userRow, column)
-                .setValue(Math.min(solveMap[user.id][contest.id].size, contest.reqCount));
+                .setValue(solveCountMap[user.id][contest.id]);
               ++column;
 
               // set user's solve status in current contest's required problems
