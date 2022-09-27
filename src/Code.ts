@@ -61,15 +61,7 @@ function myFunction() {
       })
     );
   })();
-
-  const contestMap: Record<string, VjudgeContest> = vjudgeContests.reduce(
-    (obj, contest) => ({
-      ...obj,
-      [contest.id]: contest
-    }),
-    {}
-  );
-
+  
   const solveMap: Record<string, Record<string, Set<string>>> = {};
   const solveCountMap: Record<string, Record<string, number>> = {};
 
