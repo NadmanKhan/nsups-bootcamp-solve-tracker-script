@@ -152,8 +152,8 @@ function runScript() {
     const previousRange = sheet.getDataRange();
     previousRange.breakApart();
 
-    let formatRules = sheet.getConditionalFormatRules();
-    formatRules = [];
+    const formatRules = sheet.getConditionalFormatRules();
+    while (formatRules.length) formatRules.pop();
 
     let column = 1;
 
@@ -291,10 +291,10 @@ function runScript() {
       .setVerticalAlignment('top');
 
     sheet.getRange(2, 1, 1, sheet.getLastColumn())
-      .setHorizontalAlignment('right')
+      .setHorizontalAlignment('right');
 
     sheet.getRange(1, 1, users.length + 2, 4)
-      .setBackground('#d0e0e3')
+      .setBackground('#d0e0e3');
 
     sheet.setFrozenRows(2);
     sheet.setFrozenColumns(4);
@@ -374,10 +374,9 @@ function runScript() {
             }
           );
         }
-      )
-
-    sheet.setConditionalFormatRules(formatRules)
-
+      );
+      
+    // clear extra ranges leftover from previous script
     const clearNumRows = previousRange.getRow() - sheet.getLastRow();
     if (clearNumRows > 0) {
       sheet.getRange(
