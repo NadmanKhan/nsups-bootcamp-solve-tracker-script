@@ -3,40 +3,21 @@ function runScript() {
     input: 'script-input',
     outpuSolveTracker: 'script-output: Solve Tracker'
   } as const;
-  const inputHeading = {
+  const tableHeadingInSheet = {
     contest: 'input-contest',
     user: 'input-user',
     color: 'input-color'
   } as const;
   const baseUrlVjudgeContest = 'https://vjudge.net/contest/';
 
-  const colorHex: Record<color, string> = (() => {
-    const result: Partial<Record<color, string>> = {};
-    const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetName.input);
-    const head = sheet.createTextFinder(inputHeading.color).findAll()[0];
-    const column = head.getColumn();
-    const numColumns = 2;
-    let range = sheet.getRange(head.getRow() + 2, column, 1, numColumns);
-    while (range.getValue() as string != '') {
-      result[range.getValues()[0][0] as string] =
-        sheet.getRange(range.getRow(), column + 1).getBackground();
-      range = sheet.getRange(range.getRow() + 1, column, 1, numColumns);
-    }
-    return result;
-  })() as Record<color, string>;
-
-  const users: User[] = (() => {
-    const result: User[] = [];
-    const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetName.input);
-    const head = sheet.createTextFinder(inputHeading.user).findAll()[0];
-    const column = head.getColumn();
-    const numColumns = 5;
-    let range = sheet.getRange(head.getRow() + 2, column, 1, numColumns);
-    while (range.getValue() as string != '') {
-      const values = range.getValues()[0] as string[];
-      result.push({
+  const users = getValuesFromInputSheet<User[]>(
+    tableHeadingInSheet.user,
+    [],
+    (previousValue, currentRow, currentColumn, sheet) => {
+      const values = sheet
+        .getRange(currentRow, currentColumn, 1, 5)
+        .getValues()[0] as string[];
+      previousValue.push({
         name: values[0],
         id: values[1],
         handles: {
@@ -45,22 +26,18 @@ function runScript() {
           atcoder: values[4].split(',').map(s => s.trim())
         }
       })
-      range = sheet.getRange(range.getRow() + 1, column, 1, numColumns);
+      return previousValue.filter(user => user.id && user.handles.vjudge);
     }
-    return result.filter(user => user.id && user.handles.vjudge);
-  })();
+  );
 
-  const vjudgeContests: VjudgeContest[] = (() => {
-    const result: VjudgeContest[] = [];
-    const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetName.input);
-    const head = sheet.createTextFinder(inputHeading.contest).findAll()[0];
-    const column = head.getColumn();
-    const numColumns = 3;
-    let range = sheet.getRange(head.getRow() + 2, column, 1, numColumns);
-    while (range.getValue() as string != '') {
-      const values = range.getValues()[0] as string[];
-      result.push({
+  const vjudgeContests = getValuesFromInputSheet<VjudgeContest[]>(
+    tableHeadingInSheet.contest,
+    [],
+    (previousValue, currentRow, currentColumn, sheet) => {
+      const values = sheet
+        .getRange(currentRow, currentColumn, 1, 3)
+        .getValues()[0] as string[];
+      previousValue.push({
         id: values[0],
         reqCount: parseInt(values[1]),
         reqProblems: Array.from(
@@ -69,10 +46,26 @@ function runScript() {
           .filter(s => 0 < s.length && s.length <= 2 && /^[A-Z]+$/.test(s))
           .sort((a, b) => probIdToIndex(a) - probIdToIndex(b))
       })
-      range = sheet.getRange(range.getRow() + 1, column, 1, numColumns);
+      return previousValue;
     }
-    return result;
-  })();
+  );
+
+  const colorHex = getValuesFromInputSheet<Partial<Record<color, string>>>(
+    tableHeadingInSheet.color,
+    {},
+    (previousValue, currentRow, currentColumn, sheet) => {
+      const colorName = sheet
+        .getRange(currentRow, currentColumn)
+        .getValue() as string;
+      const colorHex = sheet
+        .getRange(currentRow, currentColumn + 1)
+        .getBackground();
+      return {
+        ...previousValue,
+        [colorName]: colorHex
+      };
+    }
+  ) as Record<color, string>;
 
   const solveMap: Record<string, Record<string, Set<string>>> = {};
   const solveCountMap: Record<string, Record<string, number>> = {};
@@ -406,6 +399,29 @@ function runScript() {
         .clear();
     }
   })();
+
+  function getValuesFromInputSheet<T>(
+    tableHeadingInSheet: string,
+    initialValue: T,
+    addValueFn: (
+      previousValue: T,
+      currentRow: number,
+      currentColumn: number,
+      sheet: GoogleAppsScript.Spreadsheet.Sheet
+    ) => T
+  ) {
+    const sheet = SpreadsheetApp
+      .getActiveSpreadsheet().getSheetByName(sheetName.input);
+    const head = sheet.createTextFinder(tableHeadingInSheet).findAll()[0];
+    const column = head.getColumn();
+    let result = initialValue;
+    let range = sheet.getRange(head.getRow() + 2, column);
+    while (range.getValue() as string != '') {
+      result = addValueFn(result, range.getRow(), range.getColumn(), sheet);
+      range = sheet.getRange(range.getRow() + 1, column);
+    }
+    return result;
+  }
 
   function findUserId(handle: string, judge: Judge): string {
     if (!handle) return null;
