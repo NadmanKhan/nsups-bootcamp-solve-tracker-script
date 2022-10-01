@@ -10,7 +10,7 @@ function runScript() {
   } as const;
   const baseUrlVjudgeContest = 'https://vjudge.net/contest/';
 
-  const colorString: Record<color, string> = (() => {
+  const colorHex: Record<color, string> = (() => {
     const result: Partial<Record<color, string>> = {};
     const sheet = SpreadsheetApp
       .getActiveSpreadsheet().getSheetByName(sheetName.input);
@@ -210,17 +210,17 @@ function runScript() {
     // build and push format rule for total solve percent
     const rulePercentGradient = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMaxpointWithValue(
-        colorString.green,
+        colorHex.green,
         SpreadsheetApp.InterpolationType.PERCENT,
         '100'
       )
       .setGradientMidpointWithValue(
-        colorString.yellow,
+        colorHex.yellow,
         SpreadsheetApp.InterpolationType.PERCENT,
         '75'
       )
       .setGradientMinpointWithValue(
-        colorString.red,
+        colorHex.red,
         SpreadsheetApp.InterpolationType.PERCENT,
         '50'
       )
@@ -446,22 +446,22 @@ function runScript() {
   ): GoogleAppsScript.Spreadsheet.ConditionalFormatRule[] {
     const rule100 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(targetSolves)
-      .setBackground(colorString.lightGreen)
+      .setBackground(colorHex.lightGreen)
       .setRanges([range])
       .build();
     const rule066 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.66))
-      .setBackground(colorString.lightYellow)
+      .setBackground(colorHex.lightYellow)
       .setRanges([range])
       .build();
     const rule033 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.33))
-      .setBackground(colorString.lightOrange)
+      .setBackground(colorHex.lightOrange)
       .setRanges([range])
       .build();
     const rule000 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(0)
-      .setBackground(colorString.lightRed)
+      .setBackground(colorHex.lightRed)
       .setRanges([range])
       .build();
     return [rule100, rule066, rule033, rule000];
