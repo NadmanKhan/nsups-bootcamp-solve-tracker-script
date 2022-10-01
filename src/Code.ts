@@ -1,14 +1,15 @@
 function myFunction() {
-  const sheetNameScriptParams = 'script-params';
-  const headingParamsContest = 'params-contest';
-  const headingParamsUser = 'params-user';
-  const headingParamsColor = 'params-color';
+  const sheetNameInput = 'script-input';
+  const sheetNameOutputSolveTracker = 'script-output-solve-tracker';
+  const headingInputContest = 'input-contest';
+  const headingInputUser = 'input-user';
+  const headingInputColor = 'input-color';
   const baseUrlVjudgeContest = 'https://vjudge.net/contest/';
 
   const colorString: Record<color, string> = (() => {
     const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetNameScriptParams);
-    const head = sheet.createTextFinder(headingParamsColor).findAll()[0];
+      .getActiveSpreadsheet().getSheetByName(sheetNameInput);
+    const head = sheet.createTextFinder(headingInputColor).findAll()[0];
     const rangeName = sheet.getRange(head.getRow() + 1, head.getColumn(), 1, 4);
     const rangeValue = sheet.getRange(head.getRow() + 2, head.getColumn(), 1, 4);
     const names = rangeName.getValues()[0] as string[]
@@ -23,8 +24,8 @@ function myFunction() {
 
   const users: User[] = (() => {
     const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetNameScriptParams);
-    const head = sheet.createTextFinder(headingParamsUser).findAll()[0];
+      .getActiveSpreadsheet().getSheetByName(sheetNameInput);
+    const head = sheet.createTextFinder(headingInputUser).findAll()[0];
     const count = sheet.getRange(head.getRow(), head.getColumn() + 1).getValue() as number;
     const range = sheet.getRange(head.getRow() + 2, head.getColumn(), count, 5);
     const values = range.getValues() as string[][];
@@ -44,8 +45,8 @@ function myFunction() {
 
   const vjudgeContests: VjudgeContest[] = (() => {
     const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetNameScriptParams);
-    const head = sheet.createTextFinder(headingParamsContest).findAll()[0];
+      .getActiveSpreadsheet().getSheetByName(sheetNameInput);
+    const head = sheet.createTextFinder(headingInputContest).findAll()[0];
     const count = sheet.getRange(head.getRow(), head.getColumn() + 1).getValue() as number;
     const range = sheet.getRange(head.getRow() + 2, head.getColumn(), count, 3);
     const values = range.getValues() as string[][];
@@ -61,7 +62,7 @@ function myFunction() {
       })
     );
   })();
-  
+
   const solveMap: Record<string, Record<string, Set<string>>> = {};
   const solveCountMap: Record<string, Record<string, number>> = {};
 
@@ -142,7 +143,8 @@ function myFunction() {
 
   // write to sheet
   (() => {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('solve-tracker');
+    const sheet = SpreadsheetApp.getActiveSpreadsheet()
+      .getSheetByName(sheetNameOutputSolveTracker);
     const previousRange = sheet.getDataRange();
     previousRange.breakApart();
 
