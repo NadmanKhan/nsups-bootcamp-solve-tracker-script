@@ -1,66 +1,77 @@
-function myFunction() {
-  const sheetNameInput = 'script-input';
-  const sheetNameOutputSolveTracker = 'script-output-solve-tracker';
-  const headingInputContest = 'input-contest';
-  const headingInputUser = 'input-user';
-  const headingInputColor = 'input-color';
+function runScript() {
+  const sheetName = {
+    input: 'script-input',
+    outpuSolveTracker: 'script-output: Solve Tracker'
+  } as const;
+  const inputHeading = {
+    contest: 'input-contest',
+    user: 'input-user',
+    color: 'input-color'
+  } as const;
   const baseUrlVjudgeContest = 'https://vjudge.net/contest/';
 
   const colorString: Record<color, string> = (() => {
+    const result: Partial<Record<color, string>> = {};
     const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetNameInput);
-    const head = sheet.createTextFinder(headingInputColor).findAll()[0];
-    const rangeName = sheet.getRange(head.getRow() + 1, head.getColumn(), 1, 4);
-    const rangeValue = sheet.getRange(head.getRow() + 2, head.getColumn(), 1, 4);
-    const names = rangeName.getValues()[0] as string[]
-    return rangeValue.getBackgrounds()[0].reduce(
-      (result, value, index) => ({
-        ...result,
-        [names[index] as color]: value
-      }),
-      {}
-    );
+      .getActiveSpreadsheet().getSheetByName(sheetName.input);
+    const head = sheet.createTextFinder(inputHeading.color).findAll()[0];
+    const column = head.getColumn();
+    const numColumns = 2;
+    let range = sheet.getRange(head.getRow() + 2, column, 1, numColumns);
+    while (range.getValue() as string != '') {
+      result[range.getValues()[0][0] as string] =
+        sheet.getRange(range.getRow(), column + 1).getBackground();
+      range = sheet.getRange(range.getRow() + 1, column, 1, numColumns);
+    }
+    return result;
   })() as Record<color, string>;
 
   const users: User[] = (() => {
+    const result: User[] = [];
     const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetNameInput);
-    const head = sheet.createTextFinder(headingInputUser).findAll()[0];
-    const count = sheet.getRange(head.getRow(), head.getColumn() + 1).getValue() as number;
-    const range = sheet.getRange(head.getRow() + 2, head.getColumn(), count, 5);
-    const values = range.getValues() as string[][];
-    return values.map(
-      rowValues => ({
-        name: rowValues[0],
-        id: rowValues[1],
+      .getActiveSpreadsheet().getSheetByName(sheetName.input);
+    const head = sheet.createTextFinder(inputHeading.user).findAll()[0];
+    const column = head.getColumn();
+    const numColumns = 5;
+    let range = sheet.getRange(head.getRow() + 2, column, 1, numColumns);
+    while (range.getValue() as string != '') {
+      const values = range.getValues()[0] as string[];
+      result.push({
+        name: values[0],
+        id: values[1],
         handles: {
-          vjudge: rowValues[2].split(',').map(s => s.trim()),
-          codeforces: rowValues[3].split(',').map(s => s.trim()),
-          atcoder: rowValues[4].split(',').map(s => s.trim())
+          vjudge: values[2].split(',').map(s => s.trim()),
+          codeforces: values[3].split(',').map(s => s.trim()),
+          atcoder: values[4].split(',').map(s => s.trim())
         }
       })
-    )
-      .filter(user => user.id && user.handles.vjudge);
+      range = sheet.getRange(range.getRow() + 1, column, 1, numColumns);
+    }
+    return result.filter(user => user.id && user.handles.vjudge);
   })();
 
   const vjudgeContests: VjudgeContest[] = (() => {
+    const result: VjudgeContest[] = [];
     const sheet = SpreadsheetApp
-      .getActiveSpreadsheet().getSheetByName(sheetNameInput);
-    const head = sheet.createTextFinder(headingInputContest).findAll()[0];
-    const count = sheet.getRange(head.getRow(), head.getColumn() + 1).getValue() as number;
-    const range = sheet.getRange(head.getRow() + 2, head.getColumn(), count, 3);
-    const values = range.getValues() as string[][];
-    return values.map(
-      rowValues => ({
-        id: rowValues[0],
-        reqCount: parseInt(rowValues[1]),
+      .getActiveSpreadsheet().getSheetByName(sheetName.input);
+    const head = sheet.createTextFinder(inputHeading.contest).findAll()[0];
+    const column = head.getColumn();
+    const numColumns = 3;
+    let range = sheet.getRange(head.getRow() + 2, column, 1, numColumns);
+    while (range.getValue() as string != '') {
+      const values = range.getValues()[0] as string[];
+      result.push({
+        id: values[0],
+        reqCount: parseInt(values[1]),
         reqProblems: Array.from(
-          new Set(rowValues[2].split(',').map(id => id.trim().toUpperCase()))
+          new Set(values[2].split(',').map(id => id.trim().toUpperCase()))
         )
           .filter(s => 0 < s.length && s.length <= 2 && /^[A-Z]+$/.test(s))
           .sort((a, b) => probIdToIndex(a) - probIdToIndex(b))
       })
-    );
+      range = sheet.getRange(range.getRow() + 1, column, 1, numColumns);
+    }
+    return result;
   })();
 
   const solveMap: Record<string, Record<string, Set<string>>> = {};
@@ -144,7 +155,7 @@ function myFunction() {
   // write to sheet
   (() => {
     const sheet = SpreadsheetApp.getActiveSpreadsheet()
-      .getSheetByName(sheetNameOutputSolveTracker);
+      .getSheetByName(sheetName.outpuSolveTracker);
     const previousRange = sheet.getDataRange();
     previousRange.breakApart();
 
@@ -199,17 +210,17 @@ function myFunction() {
     // build and push format rule for total solve percent
     const rulePercentGradient = SpreadsheetApp.newConditionalFormatRule()
       .setGradientMaxpointWithValue(
-        '#00ff00',
+        colorString.green,
         SpreadsheetApp.InterpolationType.PERCENT,
         '100'
       )
       .setGradientMidpointWithValue(
-        '#ffff00',
+        colorString.yellow,
         SpreadsheetApp.InterpolationType.PERCENT,
         '75'
       )
       .setGradientMinpointWithValue(
-        '#ff0000',
+        colorString.red,
         SpreadsheetApp.InterpolationType.PERCENT,
         '50'
       )
@@ -435,22 +446,22 @@ function myFunction() {
   ): GoogleAppsScript.Spreadsheet.ConditionalFormatRule[] {
     const rule100 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(targetSolves)
-      .setBackground(colorString.green)
+      .setBackground(colorString.lightGreen)
       .setRanges([range])
       .build();
     const rule066 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.66))
-      .setBackground(colorString.yellow)
+      .setBackground(colorString.lightYellow)
       .setRanges([range])
       .build();
     const rule033 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(Math.ceil(targetSolves * 0.33))
-      .setBackground(colorString.orange)
+      .setBackground(colorString.lightOrange)
       .setRanges([range])
       .build();
     const rule000 = SpreadsheetApp.newConditionalFormatRule()
       .whenNumberGreaterThanOrEqualTo(0)
-      .setBackground(colorString.red)
+      .setBackground(colorString.lightRed)
       .setRanges([range])
       .build();
     return [rule100, rule066, rule033, rule000];

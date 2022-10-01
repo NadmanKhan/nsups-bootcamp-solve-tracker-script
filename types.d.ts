@@ -27,4 +27,5 @@ interface VjudgeResponseData {
   submissions: number[][];
 }
 
-type color = 'green' | 'yellow' | 'orange' | 'red';
+type color = 'lightGreen' | 'lightYellow' | 'lightOrange' | 'lightRed' |
+  'green' | 'yellow' | 'red';
