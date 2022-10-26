@@ -9,21 +9,23 @@ function runScript() {
     color: 'input-color'
   } as const;
   const baseUrlVjudgeContest = 'https://vjudge.net/contest/';
+  const userSchema = ['name', 'id', 'email', 'vjudge', 'codeforces', 'atcoder'];
 
   const users = getValuesFromInputSheet<User[]>(
     tableHeadingInSheet.user,
     [],
     (previousValue, currentRow, currentColumn, sheet) => {
       const values = sheet
-        .getRange(currentRow, currentColumn, 1, 5)
+        .getRange(currentRow, currentColumn, 1, 6)
         .getValues()[0] as string[];
       previousValue.push({
         name: values[0],
-        id: values[1],
+        id: values[1].toString(),
+        email: values[2],
         handles: {
-          vjudge: values[2].split(',').map(s => s.trim()),
-          codeforces: values[3].split(',').map(s => s.trim()),
-          atcoder: values[4].split(',').map(s => s.trim())
+          vjudge: values[3].split(',').map(s => s.trim()),
+          codeforces: values[4].split(',').map(s => s.trim()),
+          atcoder: values[5].split(',').map(s => s.trim())
         }
       })
       return previousValue.filter(user => user.id && user.handles.vjudge);
@@ -224,6 +226,7 @@ function runScript() {
 
     // set user credentials headings
     [
+      'NSU ID',
       'Email',
       'VJudge handle(s)',
       'Codeforces handle(s)',
@@ -343,12 +346,13 @@ function runScript() {
           // set user's credentials
           [
             user.id,
+            user.email,
             user.handles.vjudge,
             user.handles.codeforces,
             user.handles.atcoder
-          ].forEach((h: string | string[]) => {
+          ].forEach(h => {
             sheet.getRange(userRow, column)
-              .setValue(typeof h === 'string' ? h : h.join(','))
+              .setValue(typeof h === 'string' ? h : (h && h.join ? h.join(',') : ''))
               .setWrap(true)
               .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
             ++column
@@ -376,27 +380,29 @@ function runScript() {
         }
       );
       
-    // clear extra ranges leftover from previous script
-    const clearNumRows = previousRange.getRow() - sheet.getLastRow();
-    if (clearNumRows > 0) {
+    // clear extra ranges left over from previous script
+    const numExtraRows = previousRange.getLastRow() - users.length;
+    if (numExtraRows > 0) {
       sheet.getRange(
-        sheet.getLastRow() + 1,
+        users.length + 1,
         1,
-        clearNumRows,
-        previousRange.getLastColumn()
+        numExtraRows,
+        sheet.getLastColumn()
       )
         .clear();
     }
-    const clearNumColumns = previousRange.getColumn() - sheet.getLastColumn();
-    if (clearNumColumns > 0) {
+    const numExtraColumns = previousRange.getLastColumn() - (column - 1);
+    if (numExtraColumns > 0) {
       sheet.getRange(
         1,
-        sheet.getLastColumn() + 1,
-        clearNumRows,
-        previousRange.getLastColumn()
+        column,
+        sheet.getLastRow(),
+        numExtraColumns
       )
         .clear();
     }
+
+    sheet.setConditionalFormatRules(formatRules);
   })();
 
   function getValuesFromInputSheet<T>(

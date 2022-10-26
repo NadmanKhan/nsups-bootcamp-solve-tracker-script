@@ -11,6 +11,7 @@ interface VjudgeContest {
 interface User {
   id: string;
   name: string;
+  email: string;
   handles: Record<Judge, string[]>
 }
 
