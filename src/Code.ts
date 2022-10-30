@@ -162,6 +162,7 @@ function runScript() {
     // set rank heading
     sheet.setColumnWidth(column, 20);
     sheet.getRange(1, column, 2, 1)
+      .clear()
       .merge()
       .setValue('Rank')
       .setWrap(true)
@@ -171,6 +172,7 @@ function runScript() {
     // set user ("participant") name heading
     sheet.setColumnWidth(column, 200);
     sheet.getRange(1, column, 2, 1)
+      .clear()
       .merge()
       .setValue('Participant name')
       .setWrap(true)
@@ -179,6 +181,7 @@ function runScript() {
 
     // set total solves heading
     sheet.getRange(1, column, 1, 2)
+      .clear()
       .merge()
       .setValue('Total solves')
       .setWrap(true)
@@ -187,6 +190,7 @@ function runScript() {
     // set total required solve-count sub-heading
     sheet.setColumnWidth(column, 90);
     sheet.getRange(2, column)
+      .clear()
       .setValue(`Required: ${totalProblems}`);
 
     // build and push format rules for total solve-count
@@ -200,6 +204,7 @@ function runScript() {
     // set total reqruied solve percent sub-heading
     sheet.setColumnWidth(column, 40);
     sheet.getRange(2, column)
+      .clear()
       .setValue(`100%`);
 
     // build and push format rule for total solve percent
@@ -235,6 +240,7 @@ function runScript() {
       text => {
         sheet.setColumnWidth(column, 150)
         sheet.getRange(1, column, 2, 1)
+          .clear()
           .merge()
           .setValue(text)
           .setWrap(true)
@@ -253,19 +259,20 @@ function runScript() {
           .build();
 
         // set contest's heading
-        if (contest.reqProblems.length) {
-          sheet.getRange(1, column, 1, contest.reqProblems.length + 1)
-            .merge()
-        }
         sheet.getRange(1, column, 1, contest.reqProblems.length + 1)
-          .setValue('')
+          .clear()
           .setRichTextValue(richtTextContestHeading)
           .setWrap(true)
           .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+        if (contest.reqProblems.length) {
+          sheet.getRange(1, column, 1, contest.reqProblems.length + 1)
+            .merge();
+        }
 
         // set contest's required solve-count sub-heading
         sheet.setColumnWidth(column, 90);
         sheet.getRange(2, column)
+          .clear()
           .setValue(`Required: ${contest.reqCount}`);
 
         // build and push format rule for solve-count
@@ -281,6 +288,7 @@ function runScript() {
           probId => {
             sheet.setColumnWidth(column, 20);
             sheet.getRange(2, column)
+              .clear()
               .setValue(probId)
               .setHorizontalAlignment('center');
             ++column;
@@ -302,6 +310,8 @@ function runScript() {
     sheet.setFrozenRows(2);
     sheet.setFrozenColumns(4);
 
+    sheet.setConditionalFormatRules(formatRules);
+
     users
       .map(
         user => ({
@@ -321,6 +331,7 @@ function runScript() {
 
           // set user's rank
           sheet.getRange(userRow, column)
+            .clear()
             .setValue(userIndex + 1)
             .setWrap(true)
             .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
@@ -328,6 +339,7 @@ function runScript() {
 
           // set user's name
           sheet.getRange(userRow, column)
+            .clear()
             .setValue(user.name)
             .setWrap(true)
             .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
@@ -335,11 +347,13 @@ function runScript() {
 
           // set user's total solve count
           sheet.getRange(userRow, column)
+            .clear()
             .setValue(totalSolves)
           ++column;
 
           // set user's total solve percentage
           sheet.getRange(userRow, column)
+            .clear()
             .setValue(`${Math.floor((totalSolves * 100) / totalProblems)}%`)
           ++column;
 
@@ -352,6 +366,7 @@ function runScript() {
             user.handles.atcoder
           ].forEach(h => {
             sheet.getRange(userRow, column)
+              .clear()
               .setValue(typeof h === 'string' ? h : (h && h.join ? h.join(',') : ''))
               .setWrap(true)
               .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
@@ -363,6 +378,7 @@ function runScript() {
             contest => {
               // set user's solve-count in current contest
               sheet.getRange(userRow, column)
+                .clear()
                 .setValue(solveCountMap[user.id][contest.id]);
               ++column;
 
@@ -370,6 +386,7 @@ function runScript() {
               contest.reqProblems.forEach(
                 p => {
                   sheet.getRange(userRow, column)
+                    .clear()
                     .setValue(solveMap[user.id][contest.id].has(p) ? '✅' : '❌')
                     .setHorizontalAlignment('center');
                   ++column;
@@ -379,7 +396,7 @@ function runScript() {
           );
         }
       );
-      
+
     // clear extra ranges left over from previous script
     const numExtraRows = previousRange.getLastRow() - users.length;
     if (numExtraRows > 0) {
@@ -401,8 +418,6 @@ function runScript() {
       )
         .clear();
     }
-
-    sheet.setConditionalFormatRules(formatRules);
   })();
 
   function getValuesFromInputSheet<T>(
