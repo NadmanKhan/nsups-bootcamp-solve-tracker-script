@@ -165,7 +165,8 @@ function runScript() {
       .merge()
       .setValue('Rank')
       .setWrap(true)
-      .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+      .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP)
+      .setBackground('#d0e0e3');
     ++column;
 
     // set user ("participant") name heading
@@ -175,7 +176,8 @@ function runScript() {
       .merge()
       .setValue('Participant name')
       .setWrap(true)
-      .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+      .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP)
+      .setBackground('#d0e0e3');
     ++column;
 
     // set total solves heading
@@ -184,13 +186,15 @@ function runScript() {
       .merge()
       .setValue('Total solves')
       .setWrap(true)
-      .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP);
+      .setWrapStrategy(SpreadsheetApp.WrapStrategy.WRAP)
+      .setBackground('#d0e0e3');
 
     // set total required solve-count sub-heading
     sheet.setColumnWidth(column, 90);
     sheet.getRange(2, column)
       .clear()
-      .setValue(`Required: ${totalProblems}`);
+      .setValue(`Required: ${totalProblems}`)
+      .setBackground('#d0e0e3');
 
     // build and push format rules for total solve-count
     const rulesTotalSolves = formatRulesForSolveCount(
@@ -204,7 +208,8 @@ function runScript() {
     sheet.setColumnWidth(column, 40);
     sheet.getRange(2, column)
       .clear()
-      .setValue(`100%`);
+      .setValue(`100%`)
+      .setBackground('#d0e0e3');
 
     // build and push format rule for total solve percent
     const rulePercentGradient = SpreadsheetApp.newConditionalFormatRule()
@@ -325,7 +330,8 @@ function runScript() {
             .clear()
             .setValue(userIndex + 1)
             .setWrap(true)
-            .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+            .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
+            .setBackground('#d0e0e3');
           ++column;
 
           // set user's name
@@ -333,19 +339,20 @@ function runScript() {
             .clear()
             .setValue(user.name)
             .setWrap(true)
-            .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+            .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
+            .setBackground('#d0e0e3');
           ++column;
 
           // set user's total solve count
           sheet.getRange(userRow, column)
             .clear()
-            .setValue(totalSolves)
+            .setValue(totalSolves);
           ++column;
 
           // set user's total solve percentage
           sheet.getRange(userRow, column)
             .clear()
-            .setValue(`${Math.floor((totalSolves * 100) / totalProblems)}%`)
+            .setValue(`${Math.floor((totalSolves * 100) / totalProblems)}%`);
           ++column;
 
           // set user's credentials
