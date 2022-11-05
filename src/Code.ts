@@ -155,7 +155,6 @@ function runScript() {
     previousRange.breakApart();
 
     const formatRules = sheet.getConditionalFormatRules();
-    while (formatRules.length) formatRules.pop();
 
     let column = 1;
 
@@ -304,14 +303,6 @@ function runScript() {
     sheet.getRange(2, 1, 1, sheet.getLastColumn())
       .setHorizontalAlignment('right');
 
-    sheet.getRange(1, 1, users.length + 2, 4)
-      .setBackground('#d0e0e3');
-
-    sheet.setFrozenRows(2);
-    sheet.setFrozenColumns(4);
-
-    sheet.setConditionalFormatRules(formatRules);
-
     users
       .map(
         user => ({
@@ -418,6 +409,14 @@ function runScript() {
       )
         .clear();
     }
+
+    sheet.getRange(1, 1, users.length + 2, 4)
+      .setBackground('#d0e0e3');
+
+    sheet.setFrozenRows(2);
+    sheet.setFrozenColumns(4);
+
+    sheet.setConditionalFormatRules(formatRules);
   })();
 
   function getValuesFromInputSheet<T>(
